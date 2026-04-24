@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrafegoOS — Gestão de Tráfego Pago</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0e17;
+  --bg2:#111520;
+  --bg3:#161b2e;
+  --card:#181e30;
+  --border:#222840;
+  --accent:#4f7cff;
+  --accent2:#7c3aed;
+  --gold:#f59e0b;
+  --green:#10b981;
+  --red:#ef4444;
+  --text:#f0f4ff;
+  --muted:#6b7a9f;
+  --font:'DM Sans',sans-serif;
+  --head:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.logo{padding:28px 20px 24px;border-bottom:1px solid var(--border)}
+.logo-text{font-family:var(--head);font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.logo-text span{color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.nav{padding:16px 12px;flex:1}
+.nav-section{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:8px 8px 6px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(79,124,255,.15);color:var(--accent);font-weight:500}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.user-card{display:flex;align-items:center;gap:10px}
+.user-avatar{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500}
+.user-role{font-size:11px;color:var(--muted)}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-family:var(--head);font-size:18px;font-weight:700}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--font)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#3d6aff;transform:translateY(-1px)}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg3)}
+.btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-success{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.btn svg{width:15px;height:15px}
+.content{padding:28px;flex:1}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card-sm{padding:16px}
+
+/* GRID */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+
+/* STAT CARDS */
+.stat-card{position:relative;overflow:hidden}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:500}
+.stat-value{font-family:var(--head);font-size:26px;font-weight:800;letter-spacing:-1px}
+.stat-change{font-size:12px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-change.up{color:var(--green)}
+.stat-change.down{color:var(--red)}
+.stat-icon{position:absolute;right:16px;top:16px;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:20px;height:20px}
+.stat-icon.blue{background:rgba(79,124,255,.15);color:var(--accent)}
+.stat-icon.green{background:rgba(16,185,129,.15);color:var(--green)}
+.stat-icon.gold{background:rgba(245,158,11,.15);color:var(--gold)}
+.stat-icon.purple{background:rgba(124,58,237,.15);color:var(--accent2)}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:var(--head);font-size:15px;font-weight:700}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);font-weight:500}
+tbody tr{border-bottom:1px solid rgba(34,40,64,.5);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:rgba(79,124,255,.04)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:13px 14px;font-size:14px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-blue{background:rgba(79,124,255,.15);color:var(--accent)}
+.badge-gold{background:rgba(245,158,11,.15);color:var(--gold)}
+.badge-gray{background:rgba(107,122,159,.15);color:var(--muted)}
+
+/* CLIENT AVATAR */
+.client-cell{display:flex;align-items:center;gap:10px}
+.client-av{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:500px;max-width:90vw;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--head);font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;line-height:0}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* FORM */
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:14px;color:var(--text);font-family:var(--font);outline:none;transition:border .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input option{background:var(--bg3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+select.form-input{appearance:none}
+
+/* CHART CONTAINER */
+.chart-container{position:relative;height:220px}
+
+/* META CONNECT */
+.meta-card{background:linear-gradient(135deg,rgba(24,40,90,.8),rgba(79,124,255,.1));border:1px solid rgba(79,124,255,.3);border-radius:16px;padding:24px;text-align:center}
+.meta-logo{width:60px;height:60px;background:linear-gradient(135deg,#1877f2,#42a5f5);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;font-weight:900;color:#fff;font-family:var(--head)}
+.meta-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:12px}
+.meta-status.connected{background:rgba(16,185,129,.15);color:var(--green)}
+.meta-status.disconnected{background:rgba(107,122,159,.15);color:var(--muted)}
+.meta-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.input-copy{display:flex;gap:8px}
+.input-copy .form-input{flex:1}
+
+/* REPORT */
+.report-header{background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+.report-header::after{content:'';position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.05)}
+.report-logo-text{font-family:var(--head);font-size:22px;font-weight:800;margin-bottom:4px}
+.report-period{font-size:13px;opacity:.75}
+.report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.report-stat{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.report-stat-val{font-family:var(--head);font-size:22px;font-weight:800;margin-bottom:2px}
+.report-stat-lbl{font-size:11px;color:var(--muted)}
+.report-section{margin-bottom:20px}
+.report-section-title{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;font-weight:500}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:20px}
+.tab{flex:1;padding:8px 12px;border-radius:9px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--muted);font-family:var(--font);transition:all .15s;text-align:center;font-weight:500}
+.tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* NOTIFICATION */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;font-size:14px;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.toast.success .toast-icon{background:rgba(16,185,129,.2);color:var(--green)}
+.toast.error .toast-icon{background:rgba(239,68,68,.2);color:var(--red)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty-state svg{width:48px;height:48px;margin:0 auto 12px;opacity:.3}
+.empty-title{font-size:15px;font-weight:500;margin-bottom:4px;color:var(--text)}
+.empty-sub{font-size:13px}
+
+/* PAYMENT HISTORY */
+.payment-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(34,40,64,.5)}
+.payment-row:last-child{border-bottom:none}
+.payment-info{display:flex;align-items:center;gap:10px}
+.payment-icon{width:36px;height:36px;border-radius:9px;background:rgba(16,185,129,.1);color:var(--green);display:flex;align-items:center;justify-content:center}
+.payment-icon svg{width:16px;height:16px}
+.payment-name{font-size:14px;font-weight:500}
+.payment-date{font-size:12px;color:var(--muted)}
+.payment-amount{font-size:15px;font-weight:700;color:var(--green)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* METRIC ROW */
+.metric-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(34,40,64,.4)}
+.metric-row:last-child{border-bottom:none}
+.metric-name{font-size:13px;color:var(--muted)}
+.metric-val{font-size:13px;font-weight:600}
+
+/* META ACCOUNTS LIST */
+.account-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+.account-info{display:flex;align-items:center;gap:10px}
+.account-fb-icon{width:32px;height:32px;border-radius:8px;background:#1877f2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;font-family:var(--head)}
+
+/* RESPONSIVE NAV for content */
+.flex-row{display:flex;gap:20px}
+.flex-1{flex:1}
+.w-300{width:300px;flex-shrink:0}
+
+.mt-4{margin-top:16px}
+.mt-6{margin-top:24px}
+.mb-4{margin-bottom:16px}
+.gap-2{gap:8px}
+
+.text-muted{color:var(--muted);font-size:13px}
+.text-sm{font-size:13px}
+.font-bold{font-weight:700}
+.text-green{color:var(--green)}
+.text-red{color:var(--red)}
+.text-gold{color:var(--gold)}
+.text-accent{color:var(--accent)}
+
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* Delete confirm */
+.danger-zone{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:16px;margin-top:16px}
+.danger-zone-title{font-size:13px;font-weight:600;color:var(--red);margin-bottom:4px}
+.danger-zone-desc{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-text">Trafego<span>OS</span></div>
+    <div class="logo-sub">Gestão de Tráfego Pago</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <button class="nav-item active" onclick="goTo('dashboard')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="goTo('clientes')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clientes
+      <span class="nav-badge" id="nav-badge">0</span>
+    </button>
+    <button class="nav-item" onclick="goTo('financeiro')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Financeiro
+    </button>
+    <button class="nav-item" onclick="goTo('relatorios')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Relatórios
+    </button>
+    <div class="nav-section">Integrações</div>
+    <button class="nav-item" onclick="goTo('meta')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+      Meta Ads BM
+    </button>
+    <div class="nav-section">Sistema</div>
+    <button class="nav-item" onclick="goTo('configuracoes')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="user-avatar-sidebar">G</div>
+      <div>
+        <div class="user-name" id="user-name-sidebar">Gestor</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <div class="page-title" id="page-title">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary" id="topbar-secondary-btn" style="display:none"></button>
+      <button class="btn btn-primary" id="topbar-primary-btn" onclick="topbarAction()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span id="topbar-btn-text">Novo Cliente</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="grid-4 mb-4" id="dash-stats"></div>
+      <div class="flex-row mt-4">
+        <div class="flex-1">
+          <div class="card">
+            <div class="section-header">
+              <div class="section-title">Faturamento Mensal</div>
+              <select class="form-input" style="width:auto;padding:6px 10px;font-size:12px" onchange="updateChart(this.value)">
+                <option value="6">Últimos 6 meses</option>
+                <option value="12">Últimos 12 meses</option>
+              </select>
+            </div>
+            <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+          </div>
+        </div>
+        <div class="w-300">
+          <div class="card" style="height:100%">
+            <div class="section-header"><div class="section-title">Atividade Recente</div></div>
+            <div id="recent-activity"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Clientes Ativos</div>
+            <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="goTo('clientes')">Ver todos</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Nicho</th><th>Mensalidade</th><th>Status</th><th>ROAS</th><th>Vencimento</th></tr></thead>
+              <tbody id="dash-clients-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CLIENTES ===== -->
+    <div class="page" id="page-clientes">
+      <div class="tabs">
+        <button class="tab active" onclick="filterClients('todos',this)">Todos</button>
+        <button class="tab" onclick="filterClients('ativo',this)">Ativos</button>
+        <button class="tab" onclick="filterClients('pausado',this)">Pausados</button>
+        <button class="tab" onclick="filterClients('encerrado',this)">Encerrados</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Nicho</th><th>Mensalidade</th><th>Verba Ads</th><th>Status</th><th>Próx. Vencimento</th><th>Ações</th></tr></thead>
+            <tbody id="clients-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FINANCEIRO ===== -->
+    <div class="page" id="page-financeiro">
+      <div class="grid-3 mb-4" id="fin-stats"></div>
+      <div class="flex-row">
+        <div class="flex-1">
+          <div class="card">
+            <div class="section-header">
+              <div class="section-title">Histórico de Pagamentos</div>
+              <button class="btn btn-primary" style="font-size:12px;padding:7px 14px" onclick="openAddPaymentModal()">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Registrar Pagamento
+              </button>
+            </div>
+            <div id="payment-history"></div>
+          </div>
+        </div>
+        <div class="w-300">
+          <div class="card">
+            <div class="section-title mb-4">Vencimentos</div>
+            <div id="upcoming-payments"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RELATÓRIOS ===== -->
+    <div class="page" id="page-relatorios">
+      <div class="card mb-4">
+        <div class="section-header"><div class="section-title">Gerar Relatório para Cliente</div></div>
+        <div class="form-row">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Cliente</label>
+            <select class="form-input" id="report-client-select" onchange="previewReport()">
+              <option value="">Selecionar cliente...</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Período</label>
+            <select class="form-input" id="report-period">
+              <option>Maio 2025</option>
+              <option>Abril 2025</option>
+              <option>Março 2025</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4" style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="printReport()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir / Salvar PDF
+          </button>
+          <button class="btn btn-secondary" onclick="copyReportLink()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Copiar Link
+          </button>
+        </div>
+      </div>
+      <div id="report-preview"></div>
+    </div>
+
+    <!-- ===== META ADS ===== -->
+    <div class="page" id="page-meta">
+      <div class="flex-row">
+        <div class="flex-1">
+          <div class="meta-card mb-4">
+            <div class="meta-logo">f</div>
+            <div class="meta-status" id="meta-status-badge">
+              <div class="meta-dot"></div>
+              <span id="meta-status-text">Desconectado</span>
+            </div>
+            <div style="font-family:var(--head);font-size:18px;font-weight:700;margin-bottom:8px">Meta Business Manager</div>
+            <div class="text-muted mb-4" style="font-size:13px;max-width:360px;margin:0 auto 16px">Conecte sua BM do Meta Ads para importar métricas automaticamente nas suas campanhas e relatórios.</div>
+            <div id="meta-connect-area">
+              <div class="form-group" style="text-align:left;max-width:380px;margin:0 auto 12px">
+                <label class="form-label">Access Token da API do Meta</label>
+                <div class="input-copy">
+                  <input class="form-input" id="meta-token-input" type="password" placeholder="EAAxxxxxxxxxxxxxxx..." />
+                  <button class="btn btn-primary" onclick="connectMeta()">Conectar</button>
+                </div>
+              </div>
+              <div class="form-group" style="text-align:left;max-width:380px;margin:0 auto">
+                <label class="form-label">ID da Business Manager</label>
+                <input class="form-input" id="meta-bm-id" placeholder="ex: 123456789012345" />
+              </div>
+            </div>
+            <div id="meta-connected-area" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px">
+                <svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span style="color:var(--green);font-weight:600">BM conectada com sucesso!</span>
+              </div>
+              <div class="text-muted text-sm" id="meta-bm-info"></div>
+              <button class="btn btn-danger mt-4" onclick="disconnectMeta()" style="margin:12px auto 0;display:inline-flex">Desconectar</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-header"><div class="section-title">Guia de Conexão</div></div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(79,124,255,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
+                <div>
+                  <div style="font-size:14px;font-weight:500;margin-bottom:2px">Acesse o Meta for Developers</div>
+                  <div class="text-muted text-sm">Vá em <span style="color:var(--accent)">developers.facebook.com</span> e crie um App com permissão de "ads_read"</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(79,124,255,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
+                <div>
+                  <div style="font-size:14px;font-weight:500;margin-bottom:2px">Gere o Access Token</div>
+                  <div class="text-muted text-sm">No Graph API Explorer, selecione seu App, adicione as permissões <strong>ads_read</strong> e <strong>business_management</strong></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(79,124,255,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
+                <div>
+                  <div style="font-size:14px;font-weight:500;margin-bottom:2px">Cole o Token e BM ID acima</div>
+                  <div class="text-muted text-sm">Cole o token gerado e o ID da sua Business Manager nos campos ao lado</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="w-300">
+          <div class="card mb-4">
+            <div class="section-title mb-4">Contas de Anúncio</div>
+            <div id="meta-accounts-list">
+              <div class="empty-state" style="padding:20px 0">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+                <div class="empty-title" style="font-size:13px">Nenhuma conta conectada</div>
+                <div class="empty-sub" style="font-size:11px">Conecte sua BM primeiro</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title mb-4">Métricas Importadas</div>
+            <div id="meta-metrics">
+              <div class="metric-row"><div class="metric-name">Investimento Total</div><div class="metric-val" id="mm-invest">—</div></div>
+              <div class="metric-row"><div class="metric-name">Alcance</div><div class="metric-val" id="mm-reach">—</div></div>
+              <div class="metric-row"><div class="metric-name">Impressões</div><div class="metric-val" id="mm-impressions">—</div></div>
+              <div class="metric-row"><div class="metric-name">Cliques</div><div class="metric-val" id="mm-clicks">—</div></div>
+              <div class="metric-row"><div class="metric-name">CTR Médio</div><div class="metric-val" id="mm-ctr">—</div></div>
+              <div class="metric-row"><div class="metric-name">CPC Médio</div><div class="metric-val" id="mm-cpc">—</div></div>
+            </div>
+            <button class="btn btn-secondary mt-4" style="width:100%;font-size:12px" onclick="syncMeta()">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Sincronizar Métricas
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONFIGURAÇÕES ===== -->
+    <div class="page" id="page-configuracoes">
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title mb-4">Perfil da Agência</div>
+          <div class="form-group">
+            <label class="form-label">Nome da Agência / Gestor</label>
+            <input class="form-input" id="cfg-agency-name" placeholder="Sua Agência de Tráfego" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="cfg-email" type="email" placeholder="seu@email.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp</label>
+            <input class="form-input" id="cfg-whatsapp" placeholder="(11) 99999-9999" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Site</label>
+            <input class="form-input" id="cfg-site" placeholder="www.suaagencia.com.br" />
+          </div>
+          <button class="btn btn-primary" onclick="saveConfig()">Salvar Configurações</button>
+        </div>
+        <div class="card">
+          <div class="section-title mb-4">Aparência nos Relatórios</div>
+          <div class="form-group">
+            <label class="form-label">Cor Principal</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" id="cfg-color" value="#4f7cff" style="width:44px;height:36px;border:none;background:none;cursor:pointer;border-radius:8px" />
+              <input class="form-input" id="cfg-color-hex" value="#4f7cff" style="flex:1" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slogan / Tagline</label>
+            <input class="form-input" id="cfg-slogan" placeholder="Resultados que transformam negócios" />
+          </div>
+          <div class="divider"></div>
+          <div class="section-title mb-4" style="font-size:13px">Notificações</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+              <input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--accent)" />
+              Alertar vencimentos 3 dias antes
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px">
+              <input type="checkbox" checked style="width:16px;height:16px;accent-color:var(--accent)" />
+              Relatório automático mensal
+            </label>
+          </div>
+          <div class="danger-zone mt-4">
+            <div class="danger-zone-title">Zona de Perigo</div>
+            <div class="danger-zone-desc">Limpar todos os dados do sistema. Essa ação não pode ser desfeita.</div>
+            <button class="btn btn-danger mt-4" style="font-size:12px;margin-top:10px" onclick="clearAllData()">Limpar Todos os Dados</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL: Adicionar/Editar Cliente -->
+<div class="modal-overlay" id="client-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="client-modal-title">Novo Cliente</div>
+      <button class="modal-close" onclick="closeModal('client-modal')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-client-id" />
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nome do Cliente *</label>
+          <input class="form-input" id="f-name" placeholder="Ex: Clínica Sorrir" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsável</label>
+          <input class="form-input" id="f-contact" placeholder="Nome do responsável" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="f-email" type="email" placeholder="cliente@email.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">WhatsApp</label>
+          <input class="form-input" id="f-phone" placeholder="(11) 99999-9999" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nicho</label>
+          <select class="form-input" id="f-niche">
+            <option>Odontologia</option>
+            <option>Estética</option>
+            <option>Academia / Personal</option>
+            <option>Advocacia</option>
+            <option>Imobiliária</option>
+            <option>Restaurante</option>
+            <option>E-commerce</option>
+            <option>Saúde</option>
+            <option>Educação</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-input" id="f-status">
+            <option value="ativo">Ativo</option>
+            <option value="pausado">Pausado</option>
+            <option value="encerrado">Encerrado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Mensalidade (R$) *</label>
+          <input class="form-input" id="f-fee" type="number" placeholder="1500" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Verba em Ads (R$)</label>
+          <input class="form-input" id="f-adspend" type="number" placeholder="3000" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Dia de Vencimento</label>
+          <input class="form-input" id="f-dueday" type="number" min="1" max="28" placeholder="10" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de Início</label>
+          <input class="form-input" id="f-startdate" type="date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-input" id="f-notes" rows="3" placeholder="Observações sobre o cliente..."></textarea>
+      </div>
+      <!-- Métricas de performance -->
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted)">MÉTRICAS DE PERFORMANCE (deste mês)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Investimento Ads (R$)</label>
+          <input class="form-input" id="f-invest" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Faturamento Gerado (R$)</label>
+          <input class="form-input" id="f-revenue" type="number" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Leads Gerados</label>
+          <input class="form-input" id="f-leads" type="number" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Conversões</label>
+          <input class="form-input" id="f-conversions" type="number" placeholder="0" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">CPL (R$)</label>
+          <input class="form-input" id="f-cpl" type="number" step="0.01" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">ROAS</label>
+          <input class="form-input" id="f-roas" type="number" step="0.1" placeholder="0" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('client-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClient()">Salvar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Adicionar Pagamento -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Registrar Pagamento</div>
+      <button class="modal-close" onclick="closeModal('payment-modal')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Cliente *</label>
+        <select class="form-input" id="pay-client"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Valor (R$) *</label>
+          <input class="form-input" id="pay-amount" type="number" placeholder="1500" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data do Pagamento *</label>
+          <input class="form-input" id="pay-date" type="date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Referência (mês)</label>
+        <input class="form-input" id="pay-ref" placeholder="Maio/2025" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Forma de Pagamento</label>
+        <select class="form-input" id="pay-method">
+          <option>PIX</option>
+          <option>Transferência</option>
+          <option>Boleto</option>
+          <option>Cartão</option>
+          <option>Dinheiro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação</label>
+        <input class="form-input" id="pay-note" placeholder="Opcional" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('payment-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePayment()">Registrar Pagamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ver Cliente -->
+<div class="modal-overlay" id="view-client-modal">
+  <div class="modal" style="width:600px">
+    <div class="modal-header">
+      <div class="modal-title" id="vc-title">Detalhes do Cliente</div>
+      <button class="modal-close" onclick="closeModal('view-client-modal')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="vc-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('view-client-modal')">Fechar</button>
+      <button class="btn btn-secondary" id="vc-report-btn">Ver Relatório</button>
+      <button class="btn btn-primary" id="vc-edit-btn">Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toast-icon">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </div>
+  <span id="toast-msg">Salvo com sucesso!</span>
+</div>
+
+<script>
+// ============================
+// DATA LAYER
+// ============================
+let DB = {
+  clients: [],
+  payments: [],
+  config: { agencyName:'Minha Agência', email:'', whatsapp:'', site:'', color:'#4f7cff', slogan:'Resultados que transformam negócios' },
+  meta: { connected:false, token:'', bmId:'', bmName:'' }
+};
+
+function loadDB(){
+  try{
+    const s = localStorage.getItem('trafegoOS');
+    if(s) DB = JSON.parse(s);
+  }catch(e){}
+}
+
+function saveDB(){
+  localStorage.setItem('trafegoOS', JSON.stringify(DB));
+}
+
+loadDB();
+
+// ============================
+// NAVIGATION
+// ============================
+const pages = {
+  dashboard:{ title:'Dashboard', btn:'Novo Cliente', secondary:null },
+  clientes:{ title:'Clientes', btn:'Novo Cliente', secondary:null },
+  financeiro:{ title:'Financeiro', btn:'Registrar Pagamento', secondary:null },
+  relatorios:{ title:'Relatórios', btn:'Gerar Relatório', secondary:null },
+  meta:{ title:'Meta Ads BM', btn:null, secondary:null },
+  configuracoes:{ title:'Configurações', btn:'Salvar', secondary:null }
+};
+
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
+  });
+  const cfg = pages[page];
+  document.getElementById('page-title').textContent = cfg.title;
+  const pb = document.getElementById('topbar-primary-btn');
+  if(cfg.btn){ pb.style.display='inline-flex'; document.getElementById('topbar-btn-text').textContent=cfg.btn; }
+  else pb.style.display='none';
+  renderPage(page);
+}
+
+function topbarAction(){
+  const active = document.querySelector('.page.active')?.id?.replace('page-','');
+  if(active==='dashboard'||active==='clientes') openAddClientModal();
+  else if(active==='financeiro') openAddPaymentModal();
+  else if(active==='relatorios') printReport();
+}
+
+// ============================
+// COLORS for clients
+// ============================
+const COLORS = ['#4f7cff','#7c3aed','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16'];
+function clientColor(id){ return COLORS[id % COLORS.length]; }
+function initials(name){ return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+// ============================
+// RENDER
+// ============================
+function renderPage(page){
+  if(page==='dashboard') renderDashboard();
+  else if(page==='clientes') renderClients();
+  else if(page==='financeiro') renderFinanceiro();
+  else if(page==='relatorios') renderRelatorios();
+  else if(page==='meta') renderMeta();
+  else if(page==='configuracoes') renderConfig();
+  updateNavBadge();
+}
+
+function updateNavBadge(){
+  const active = DB.clients.filter(c=>c.status==='ativo').length;
+  document.getElementById('nav-badge').textContent = active;
+}
+
+// ============================
+// DASHBOARD
+// ============================
+let revenueChartInst = null;
+
+function renderDashboard(){
+  const active = DB.clients.filter(c=>c.status==='ativo');
+  const totalMR = active.reduce((s,c)=>s+Number(c.fee||0),0);
+  const totalLeads = DB.clients.reduce((s,c)=>s+Number(c.leads||0),0);
+  const totalAds = DB.clients.reduce((s,c)=>s+Number(c.invest||0),0);
+  const avgROAS = DB.clients.length ? (DB.clients.reduce((s,c)=>s+Number(c.roas||0),0)/DB.clients.length).toFixed(1) : '0.0';
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="card stat-card">
+      <div class="stat-icon blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="stat-label">Clientes Ativos</div>
+      <div class="stat-value">${active.length}</div>
+      <div class="stat-change up"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> Total: ${DB.clients.length}</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="stat-label">Receita Recorrente</div>
+      <div class="stat-value">R$${totalMR.toLocaleString('pt-BR')}</div>
+      <div class="stat-change up"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> Mensal</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon gold"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <div class="stat-label">Leads Gerados</div>
+      <div class="stat-value">${totalLeads.toLocaleString('pt-BR')}</div>
+      <div class="stat-change up"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> Este mês</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon purple"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+      <div class="stat-label">ROAS Médio</div>
+      <div class="stat-value">${avgROAS}x</div>
+      <div class="stat-change up"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> Ads: R$${totalAds.toLocaleString('pt-BR')}</div>
+    </div>
+  `;
+
+  renderRevenueChart(6);
+
+  // Recent activity
+  const activity = [...DB.payments].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  document.getElementById('recent-activity').innerHTML = activity.length ? activity.map(p=>{
+    const cl = DB.clients.find(c=>c.id===p.clientId);
+    return `<div class="payment-row">
+      <div class="payment-info">
+        <div class="payment-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div><div class="payment-name" style="font-size:13px">${cl?cl.name:'Cliente'}</div><div class="payment-date">${formatDate(p.date)}</div></div>
+      </div>
+      <div class="payment-amount" style="font-size:13px">+R$${Number(p.amount).toLocaleString('pt-BR')}</div>
+    </div>`;
+  }).join('') : '<div class="text-muted text-sm" style="padding:12px 0">Nenhum pagamento registrado</div>';
+
+  // Dash clients table
+  const rows = DB.clients.filter(c=>c.status==='ativo').slice(0,5);
+  document.getElementById('dash-clients-table').innerHTML = rows.length ? rows.map((c,i)=>`
+    <tr onclick="viewClient(${c.id})">
+      <td><div class="client-cell"><div class="client-av" style="background:${clientColor(c.id)}20;color:${clientColor(c.id)}">${initials(c.name)}</div>${c.name}</div></td>
+      <td><span class="badge badge-blue">${c.niche}</span></td>
+      <td class="text-green font-bold">R$${Number(c.fee).toLocaleString('pt-BR')}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td>${c.roas?c.roas+'x':'—'}</td>
+      <td class="text-muted text-sm">Dia ${c.dueday||'—'}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Nenhum cliente ativo. Adicione seu primeiro cliente!</td></tr>';
+}
+
+function renderRevenueChart(months){
+  const ctx = document.getElementById('revenueChart');
+  if(!ctx) return;
+  if(revenueChartInst){ revenueChartInst.destroy(); }
+  const labels = [];
+  const data = [];
+  const now = new Date();
+  for(let i=months-1;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    labels.push(d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+    const monthPayments = DB.payments.filter(p=>{
+      const pd = new Date(p.date);
+      return pd.getMonth()===d.getMonth()&&pd.getFullYear()===d.getFullYear();
+    });
+    const base = DB.clients.filter(c=>c.status==='ativo').reduce((s,c)=>s+Number(c.fee||0),0);
+    data.push(monthPayments.length ? monthPayments.reduce((s,p)=>s+Number(p.amount),0) : (i===0?base:Math.floor(base*(.7+Math.random()*.5))));
+  }
+  revenueChartInst = new Chart(ctx,{
+    type:'line',
+    data:{ labels, datasets:[{ label:'Faturamento', data, borderColor:'#4f7cff', backgroundColor:'rgba(79,124,255,.1)', fill:true, tension:.4, pointBackgroundColor:'#4f7cff', pointRadius:4 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'#6b7a9f',font:{size:11}} }, y:{ grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'#6b7a9f',font:{size:11},callback:v=>'R$'+v.toLocaleString('pt-BR')} } } }
+  });
+}
+
+function updateChart(v){ renderRevenueChart(parseInt(v)); }
+
+// ============================
+// CLIENTS
+// ============================
+let clientFilter = 'todos';
+
+function renderClients(){
+  const filtered = clientFilter==='todos' ? DB.clients : DB.clients.filter(c=>c.status===clientFilter);
+  document.getElementById('clients-table').innerHTML = filtered.length ? filtered.map(c=>`
+    <tr onclick="viewClient(${c.id})">
+      <td><div class="client-cell"><div class="client-av" style="background:${clientColor(c.id)}20;color:${clientColor(c.id)}">${initials(c.name)}</div><div><div style="font-weight:500">${c.name}</div><div class="text-muted" style="font-size:12px">${c.email||c.phone||''}</div></div></div></td>
+      <td><span class="badge badge-blue">${c.niche}</span></td>
+      <td class="text-green font-bold">R$${Number(c.fee||0).toLocaleString('pt-BR')}</td>
+      <td class="text-muted">R$${Number(c.adspend||0).toLocaleString('pt-BR')}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td class="text-muted text-sm">Dia ${c.dueday||'—'}</td>
+      <td>
+        <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+          <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px" onclick="editClient(${c.id})">Editar</button>
+          <button class="btn btn-danger" style="padding:6px 10px;font-size:12px" onclick="deleteClient(${c.id})">Del</button>
+        </div>
+      </td>
+    </tr>
+  `).join('') : `<tr><td colspan="7"><div class="empty-state"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><div class="empty-title">Nenhum cliente encontrado</div><div class="empty-sub">Clique em "Novo Cliente" para começar</div></div></td></tr>`;
+}
+
+function filterClients(f, el){
+  clientFilter = f;
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderClients();
+}
+
+function statusBadge(s){
+  if(s==='ativo') return '<span class="badge badge-green">Ativo</span>';
+  if(s==='pausado') return '<span class="badge badge-gold">Pausado</span>';
+  return '<span class="badge badge-gray">Encerrado</span>';
+}
+
+function openAddClientModal(){
+  document.getElementById('client-modal-title').textContent = 'Novo Cliente';
+  document.getElementById('edit-client-id').value = '';
+  ['name','contact','email','phone','fee','adspend','dueday','notes','invest','revenue','leads','conversions','cpl','roas'].forEach(f=>{ const el=document.getElementById('f-'+f); if(el) el.value=''; });
+  document.getElementById('f-niche').value = 'Odontologia';
+  document.getElementById('f-status').value = 'ativo';
+  document.getElementById('f-startdate').value = new Date().toISOString().split('T')[0];
+  openModal('client-modal');
+}
+
+function editClient(id){
+  const c = DB.clients.find(x=>x.id===id);
+  if(!c) return;
+  closeModal('view-client-modal');
+  document.getElementById('client-modal-title').textContent = 'Editar Cliente';
+  document.getElementById('edit-client-id').value = id;
+  document.getElementById('f-name').value = c.name||'';
+  document.getElementById('f-contact').value = c.contact||'';
+  document.getElementById('f-email').value = c.email||'';
+  document.getElementById('f-phone').value = c.phone||'';
+  document.getElementById('f-niche').value = c.niche||'Odontologia';
+  document.getElementById('f-status').value = c.status||'ativo';
+  document.getElementById('f-fee').value = c.fee||'';
+  document.getElementById('f-adspend').value = c.adspend||'';
+  document.getElementById('f-dueday').value = c.dueday||'';
+  document.getElementById('f-startdate').value = c.startdate||'';
+  document.getElementById('f-notes').value = c.notes||'';
+  document.getElementById('f-invest').value = c.invest||'';
+  document.getElementById('f-revenue').value = c.revenue||'';
+  document.getElementById('f-leads').value = c.leads||'';
+  document.getElementById('f-conversions').value = c.conversions||'';
+  document.getElementById('f-cpl').value = c.cpl||'';
+  document.getElementById('f-roas').value = c.roas||'';
+  openModal('client-modal');
+}
+
+function saveClient(){
+  const name = document.getElementById('f-name').value.trim();
+  const fee = document.getElementById('f-fee').value;
+  if(!name){ toast('Preencha o nome do cliente','error'); return; }
+  if(!fee){ toast('Preencha a mensalidade','error'); return; }
+  const editId = document.getElementById('edit-client-id').value;
+  const data = {
+    name, contact:document.getElementById('f-contact').value,
+    email:document.getElementById('f-email').value,
+    phone:document.getElementById('f-phone').value,
+    niche:document.getElementById('f-niche').value,
+    status:document.getElementById('f-status').value,
+    fee:Number(fee), adspend:Number(document.getElementById('f-adspend').value||0),
+    dueday:document.getElementById('f-dueday').value,
+    startdate:document.getElementById('f-startdate').value,
+    notes:document.getElementById('f-notes').value,
+    invest:Number(document.getElementById('f-invest').value||0),
+    revenue:Number(document.getElementById('f-revenue').value||0),
+    leads:Number(document.getElementById('f-leads').value||0),
+    conversions:Number(document.getElementById('f-conversions').value||0),
+    cpl:Number(document.getElementById('f-cpl').value||0),
+    roas:Number(document.getElementById('f-roas').value||0),
+    updatedAt: new Date().toISOString()
+  };
+  if(editId){
+    const idx = DB.clients.findIndex(c=>c.id===Number(editId));
+    if(idx>=0){ DB.clients[idx]={...DB.clients[idx],...data}; }
+  } else {
+    data.id = Date.now();
+    data.createdAt = new Date().toISOString();
+    DB.clients.push(data);
+  }
+  saveDB();
+  closeModal('client-modal');
+  toast(editId?'Cliente atualizado!':'Cliente adicionado!');
+  renderPage(document.querySelector('.page.active')?.id?.replace('page-',''));
+  updateReportSelect();
+}
+
+function deleteClient(id){
+  if(!confirm('Tem certeza que deseja excluir este cliente?')) return;
+  DB.clients = DB.clients.filter(c=>c.id!==id);
+  DB.payments = DB.payments.filter(p=>p.clientId!==id);
+  saveDB();
+  toast('Cliente removido','error');
+  renderPage(document.querySelector('.page.active')?.id?.replace('page-',''));
+}
+
+function viewClient(id){
+  const c = DB.clients.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('vc-title').textContent = c.name;
+  const payments = DB.payments.filter(p=>p.clientId===id);
+  const totalPaid = payments.reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('vc-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div class="client-av" style="width:56px;height:56px;border-radius:14px;font-size:20px;background:${clientColor(c.id)}20;color:${clientColor(c.id)};display:flex;align-items:center;justify-content:center;font-weight:700">${initials(c.name)}</div>
+      <div>
+        <div style="font-size:18px;font-weight:700">${c.name}</div>
+        <div style="display:flex;gap:8px;margin-top:4px">${statusBadge(c.status)}<span class="badge badge-blue">${c.niche}</span></div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="text-muted text-sm">Mensalidade</div>
+        <div style="font-size:22px;font-weight:800;color:var(--green)">R$${Number(c.fee).toLocaleString('pt-BR')}</div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="report-stat"><div class="report-stat-val text-gold">${c.leads||0}</div><div class="report-stat-lbl">Leads</div></div>
+      <div class="report-stat"><div class="report-stat-val text-accent">${c.roas||0}x</div><div class="report-stat-lbl">ROAS</div></div>
+      <div class="report-stat"><div class="report-stat-val text-green">R$${Number(totalPaid).toLocaleString('pt-BR')}</div><div class="report-stat-lbl">Total Pago</div></div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid-2">
+      <div>
+        <div class="metric-row"><div class="metric-name">Contato</div><div class="metric-val">${c.contact||'—'}</div></div>
+        <div class="metric-row"><div class="metric-name">Email</div><div class="metric-val">${c.email||'—'}</div></div>
+        <div class="metric-row"><div class="metric-name">WhatsApp</div><div class="metric-val">${c.phone||'—'}</div></div>
+        <div class="metric-row"><div class="metric-name">Vencimento</div><div class="metric-val">Dia ${c.dueday||'—'}</div></div>
+      </div>
+      <div>
+        <div class="metric-row"><div class="metric-name">Verba Ads</div><div class="metric-val">R$${Number(c.adspend||0).toLocaleString('pt-BR')}</div></div>
+        <div class="metric-row"><div class="metric-name">Investimento</div><div class="metric-val">R$${Number(c.invest||0).toLocaleString('pt-BR')}</div></div>
+        <div class="metric-row"><div class="metric-name">Conversões</div><div class="metric-val">${c.conversions||0}</div></div>
+        <div class="metric-row"><div class="metric-name">CPL</div><div class="metric-val">R$${c.cpl||0}</div></div>
+      </div>
+    </div>
+    ${c.notes?`<div class="divider"></div><div class="text-muted text-sm"><strong>Obs:</strong> ${c.notes}</div>`:''}
+  `;
+  document.getElementById('vc-edit-btn').onclick = ()=>editClient(id);
+  document.getElementById('vc-report-btn').onclick = ()=>{ closeModal('view-client-modal'); goTo('relatorios'); setTimeout(()=>{ document.getElementById('report-client-select').value=id; previewReport(); },100); };
+  openModal('view-client-modal');
+}
+
+// ============================
+// FINANCEIRO
+// ============================
+function renderFinanceiro(){
+  const totalReceived = DB.payments.reduce((s,p)=>s+Number(p.amount),0);
+  const thisMonth = new Date().getMonth();
+  const thisYear = new Date().getFullYear();
+  const monthPayments = DB.payments.filter(p=>{ const d=new Date(p.date); return d.getMonth()===thisMonth&&d.getFullYear()===thisYear; });
+  const monthTotal = monthPayments.reduce((s,p)=>s+Number(p.amount),0);
+  const mrr = DB.clients.filter(c=>c.status==='ativo').reduce((s,c)=>s+Number(c.fee||0),0);
+
+  document.getElementById('fin-stats').innerHTML = `
+    <div class="card stat-card">
+      <div class="stat-icon green"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22"/><rect x="2" y="7" width="20" height="5"/><path d="M6 12v10M10 12v10M14 12v10M18 12v10M2 7l10-5 10 5"/></svg></div>
+      <div class="stat-label">Total Recebido</div>
+      <div class="stat-value">R$${totalReceived.toLocaleString('pt-BR')}</div>
+      <div class="stat-change up">${DB.payments.length} pagamentos</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon blue"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="stat-label">Recebido Este Mês</div>
+      <div class="stat-value">R$${monthTotal.toLocaleString('pt-BR')}</div>
+      <div class="stat-change up">${monthPayments.length} pagamentos</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon gold"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+      <div class="stat-label">MRR (Recorrência)</div>
+      <div class="stat-value">R$${mrr.toLocaleString('pt-BR')}</div>
+      <div class="stat-change up">por mês</div>
+    </div>
+  `;
+
+  const payments = [...DB.payments].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('payment-history').innerHTML = payments.length ? payments.map(p=>{
+    const cl = DB.clients.find(c=>c.id===p.clientId);
+    return `<div class="payment-row">
+      <div class="payment-info">
+        <div class="payment-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div>
+          <div class="payment-name">${cl?cl.name:'Cliente removido'}</div>
+          <div class="payment-date">${formatDate(p.date)} · ${p.ref||''} · ${p.method||'PIX'}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="payment-amount">+R$${Number(p.amount).toLocaleString('pt-BR')}</div>
+        <button onclick="deletePayment(${p.id})" class="btn btn-danger" style="padding:4px 8px;font-size:11px">×</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><div class="empty-title">Nenhum pagamento registrado</div><div class="empty-sub">Clique em Registrar Pagamento</div></div>';
+
+  // Upcoming
+  const today = new Date();
+  const upcoming = DB.clients.filter(c=>c.status==='ativo'&&c.dueday).sort((a,b)=>a.dueday-b.dueday);
+  document.getElementById('upcoming-payments').innerHTML = upcoming.length ? upcoming.map(c=>{
+    const due = new Date(today.getFullYear(),today.getMonth(),Number(c.dueday));
+    if(due < today) due.setMonth(due.getMonth()+1);
+    const diff = Math.ceil((due-today)/(1000*60*60*24));
+    const urgent = diff<=3;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:500">${c.name}</div>
+        <div style="font-size:11px;color:${urgent?'var(--red)':'var(--muted)'}">${diff<=0?'Vencido hoje':`em ${diff} dias`}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--green)">R$${Number(c.fee).toLocaleString('pt-BR')}</div>
+    </div>`;
+  }).join('') : '<div class="text-muted text-sm" style="padding:8px 0">Nenhum vencimento configurado</div>';
+}
+
+function openAddPaymentModal(){
+  const sel = document.getElementById('pay-client');
+  sel.innerHTML = DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('pay-amount').value = '';
+  document.getElementById('pay-ref').value = new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  openModal('payment-modal');
+}
+
+function savePayment(){
+  const clientId = Number(document.getElementById('pay-client').value);
+  const amount = document.getElementById('pay-amount').value;
+  const date = document.getElementById('pay-date').value;
+  if(!clientId||!amount||!date){ toast('Preencha os campos obrigatórios','error'); return; }
+  DB.payments.push({
+    id:Date.now(), clientId, amount:Number(amount),
+    date, ref:document.getElementById('pay-ref').value,
+    method:document.getElementById('pay-method').value,
+    note:document.getElementById('pay-note').value
+  });
+  saveDB();
+  closeModal('payment-modal');
+  toast('Pagamento registrado!');
+  renderPage('financeiro');
+}
+
+function deletePayment(id){
+  DB.payments = DB.payments.filter(p=>p.id!==id);
+  saveDB();
+  toast('Pagamento removido','error');
+  renderFinanceiro();
+}
+
+// ============================
+// RELATÓRIOS
+// ============================
+function renderRelatorios(){
+  updateReportSelect();
+}
+
+function updateReportSelect(){
+  const sel = document.getElementById('report-client-select');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Selecionar cliente...</option>' + DB.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+
+function previewReport(){
+  const id = Number(document.getElementById('report-client-select').value);
+  const period = document.getElementById('report-period').value;
+  if(!id){ document.getElementById('report-preview').innerHTML=''; return; }
+  const c = DB.clients.find(x=>x.id===id);
+  if(!c) return;
+  const agency = DB.config.agencyName||'Minha Agência';
+  const color = DB.config.color||'#4f7cff';
+  const roas = c.roas||0;
+  const invest = Number(c.invest||0);
+  const leads = Number(c.leads||0);
+  const conversions = Number(c.conversions||0);
+  const revenue = Number(c.revenue||0);
+  const cpl = c.cpl||(leads>0?(invest/leads).toFixed(2):0);
+
+  document.getElementById('report-preview').innerHTML = `
+    <div id="printable-report" style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <div class="report-header" style="background:linear-gradient(135deg,${color},${color}aa)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div style="font-size:11px;opacity:.7;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Relatório de Performance</div>
+            <div class="report-logo-text">${c.name}</div>
+            <div class="report-period">${period} · Gestão por ${agency}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;opacity:.7;margin-bottom:4px">Status</div>
+            <div style="font-size:16px;font-weight:700">${c.status==='ativo'?'✅ Ativo':'⏸ Pausado'}</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:20px">
+        <div class="report-grid">
+          <div class="report-stat"><div class="report-stat-val" style="color:${color}">${leads}</div><div class="report-stat-lbl">Leads Gerados</div></div>
+          <div class="report-stat"><div class="report-stat-val" style="color:var(--green)">R$${invest.toLocaleString('pt-BR')}</div><div class="report-stat-lbl">Investido em Ads</div></div>
+          <div class="report-stat"><div class="report-stat-val" style="color:var(--gold)">${roas}x</div><div class="report-stat-lbl">ROAS</div></div>
+          <div class="report-stat"><div class="report-stat-val">${conversions}</div><div class="report-stat-lbl">Conversões</div></div>
+          <div class="report-stat"><div class="report-stat-val">R$${Number(cpl).toLocaleString('pt-BR')}</div><div class="report-stat-lbl">CPL (Custo/Lead)</div></div>
+          <div class="report-stat"><div class="report-stat-val" style="color:var(--green)">R$${revenue.toLocaleString('pt-BR')}</div><div class="report-stat-lbl">Faturamento Gerado</div></div>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">Análise de Performance</div>
+          <div class="grid-2">
+            <div>
+              <div class="metric-row"><div class="metric-name">Plataforma</div><div class="metric-val">Meta Ads</div></div>
+              <div class="metric-row"><div class="metric-name">Nicho</div><div class="metric-val">${c.niche}</div></div>
+              <div class="metric-row"><div class="metric-name">Verba Mensal</div><div class="metric-val">R$${Number(c.adspend||0).toLocaleString('pt-BR')}</div></div>
+              <div class="metric-row"><div class="metric-name">Período</div><div class="metric-val">${period}</div></div>
+            </div>
+            <div>
+              <div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="text-muted">Meta de Leads</span><span>${leads}/50</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,leads*2)}%;background:${color}"></div></div>
+              </div>
+              <div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="text-muted">Meta de ROAS</span><span>${roas}x/3x</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,roas/3*100)}%;background:var(--green)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="text-muted">Taxa de Conversão</span><span>${leads>0?((conversions/leads)*100).toFixed(1):0}%</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${leads>0?Math.min(100,(conversions/leads)*100):0}%;background:var(--gold)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">Próximos Passos</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:10px 14px">
+              <div style="color:${color};font-size:16px">→</div>
+              <div style="font-size:13px">Otimizar criativos com maior CTR para reduzir CPL e escalar volume de leads</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:10px 14px">
+              <div style="color:var(--green);font-size:16px">→</div>
+              <div style="font-size:13px">Testar novos públicos lookalike para expandir alcance qualificado</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border-radius:10px;padding:10px 14px">
+              <div style="color:var(--gold);font-size:16px">→</div>
+              <div style="font-size:13px">Ativar remarketing para leads que visitaram o site mas não converteram</div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:11px;color:var(--muted)">Relatório gerado por ${agency} · ${new Date().toLocaleDateString('pt-BR')}</div>
+          <div style="font-size:11px;color:var(--muted)">${DB.config.whatsapp||DB.config.email||''}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function printReport(){
+  const el = document.getElementById('printable-report');
+  if(!el){ toast('Selecione um cliente primeiro','error'); return; }
+  window.print();
+}
+
+function copyReportLink(){
+  navigator.clipboard.writeText(window.location.href).then(()=>toast('Link copiado!'));
+}
+
+// ============================
+// META ADS
+// ============================
+function renderMeta(){
+  if(DB.meta.connected){
+    document.getElementById('meta-status-badge').className='meta-status connected';
+    document.getElementById('meta-status-text').textContent='Conectado';
+    document.getElementById('meta-connect-area').style.display='none';
+    document.getElementById('meta-connected-area').style.display='block';
+    document.getElementById('meta-bm-info').textContent = 'BM ID: '+DB.meta.bmId;
+    document.getElementById('meta-accounts-list').innerHTML = `
+      <div class="account-item">
+        <div class="account-info">
+          <div class="account-fb-icon">f</div>
+          <div><div style="font-size:13px;font-weight:500">Conta Principal</div><div style="font-size:11px;color:var(--muted)">act_${DB.meta.bmId}</div></div>
+        </div>
+        <span class="badge badge-green">Ativa</span>
+      </div>
+    `;
+    document.getElementById('mm-invest').textContent = 'R$'+DB.clients.reduce((s,c)=>s+Number(c.invest||0),0).toLocaleString('pt-BR');
+    document.getElementById('mm-reach').textContent = '—';
+    document.getElementById('mm-impressions').textContent = '—';
+    document.getElementById('mm-clicks').textContent = '—';
+    document.getElementById('mm-ctr').textContent = '—';
+    document.getElementById('mm-cpc').textContent = '—';
+  } else {
+    document.getElementById('meta-status-badge').className='meta-status disconnected';
+    document.getElementById('meta-status-text').textContent='Desconectado';
+    document.getElementById('meta-connect-area').style.display='block';
+    document.getElementById('meta-connected-area').style.display='none';
+  }
+}
+
+function connectMeta(){
+  const token = document.getElementById('meta-token-input').value.trim();
+  const bmId = document.getElementById('meta-bm-id').value.trim();
+  if(!token||!bmId){ toast('Preencha o Token e o BM ID','error'); return; }
+  // Simulate connection (real integration requires backend due to CORS)
+  DB.meta = { connected:true, token, bmId, bmName:'Minha Business Manager' };
+  saveDB();
+  toast('Meta Ads conectado com sucesso!');
+  renderMeta();
+}
+
+function disconnectMeta(){
+  DB.meta = { connected:false, token:'', bmId:'', bmName:'' };
+  saveDB();
+  toast('Meta Ads desconectado','error');
+  renderMeta();
+}
+
+function syncMeta(){
+  toast('Sincronizando... (requer backend para dados reais)');
+}
+
+// ============================
+// CONFIG
+// ============================
+function renderConfig(){
+  document.getElementById('cfg-agency-name').value = DB.config.agencyName||'';
+  document.getElementById('cfg-email').value = DB.config.email||'';
+  document.getElementById('cfg-whatsapp').value = DB.config.whatsapp||'';
+  document.getElementById('cfg-site').value = DB.config.site||'';
+  document.getElementById('cfg-color').value = DB.config.color||'#4f7cff';
+  document.getElementById('cfg-color-hex').value = DB.config.color||'#4f7cff';
+  document.getElementById('cfg-slogan').value = DB.config.slogan||'';
+  const ua = document.getElementById('user-avatar-sidebar');
+  const un = document.getElementById('user-name-sidebar');
+  if(ua) ua.textContent = (DB.config.agencyName||'G')[0].toUpperCase();
+  if(un) un.textContent = DB.config.agencyName||'Gestor';
+  document.getElementById('cfg-color').oninput = function(){ document.getElementById('cfg-color-hex').value=this.value; };
+}
+
+function saveConfig(){
+  DB.config = {
+    agencyName: document.getElementById('cfg-agency-name').value,
+    email: document.getElementById('cfg-email').value,
+    whatsapp: document.getElementById('cfg-whatsapp').value,
+    site: document.getElementById('cfg-site').value,
+    color: document.getElementById('cfg-color').value,
+    slogan: document.getElementById('cfg-slogan').value
+  };
+  saveDB();
+  renderConfig();
+  toast('Configurações salvas!');
+}
+
+function clearAllData(){
+  if(!confirm('⚠️ ATENÇÃO: Isso vai apagar TODOS os dados. Tem certeza?')) return;
+  DB = { clients:[], payments:[], config:DB.config, meta:{connected:false,token:'',bmId:'',bmName:''} };
+  saveDB();
+  toast('Dados limpos','error');
+  renderPage('dashboard');
+}
+
+// ============================
+// MODAL UTILS
+// ============================
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ============================
+// TOAST
+// ============================
+function toast(msg, type='success'){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast '+type;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ============================
+// UTILS
+// ============================
+function formatDate(d){ if(!d) return '—'; return new Date(d+'T12:00:00').toLocaleDateString('pt-BR'); }
+
+// ============================
+// INIT
+// ============================
+renderDashboard();
+updateNavBadge();
+updateReportSelect();
+
+// Seed data if empty
+if(DB.clients.length===0){
+  const demo = [
+    { id:1, name:'Clínica Sorrir', contact:'Dr. Paulo Melo', email:'paulo@sorrir.com', phone:'(11) 99876-5432', niche:'Odontologia', status:'ativo', fee:2000, adspend:5000, dueday:10, startdate:'2025-01-10', invest:4800, revenue:28000, leads:87, conversions:23, cpl:55, roas:5.8, createdAt:'2025-01-10T10:00:00Z' },
+    { id:2, name:'Studio Beauty Ana', contact:'Ana Lima', email:'ana@studio.com', phone:'(11) 97654-3210', niche:'Estética', status:'ativo', fee:1500, adspend:3000, dueday:15, startdate:'2025-02-01', invest:2900, revenue:12000, leads:54, conversions:18, cpl:54, roas:4.1, createdAt:'2025-02-01T10:00:00Z' },
+    { id:3, name:'Academia FitPlus', contact:'Carlos Gomes', email:'carlos@fitplus.com', phone:'(11) 96543-2109', niche:'Academia / Personal', status:'ativo', fee:1200, adspend:2000, dueday:5, startdate:'2025-03-01', invest:1950, revenue:9500, leads:33, conversions:12, cpl:59, roas:4.9, createdAt:'2025-03-01T10:00:00Z' },
+    { id:4, name:'Dr. Roberto Advocacia', contact:'Dr. Roberto', email:'roberto@adv.com', phone:'(11) 95432-1098', niche:'Advocacia', status:'pausado', fee:1800, adspend:2500, dueday:20, startdate:'2025-01-15', invest:0, revenue:0, leads:0, conversions:0, cpl:0, roas:0, createdAt:'2025-01-15T10:00:00Z' }
+  ];
+  DB.clients = demo;
+  DB.payments = [
+    { id:100, clientId:1, amount:2000, date:'2025-05-10', ref:'Maio/2025', method:'PIX', note:'' },
+    { id:101, clientId:2, amount:1500, date:'2025-05-15', ref:'Maio/2025', method:'PIX', note:'' },
+    { id:102, clientId:3, amount:1200, date:'2025-05-05', ref:'Maio/2025', method:'Transferência', note:'' },
+    { id:103, clientId:1, amount:2000, date:'2025-04-10', ref:'Abril/2025', method:'PIX', note:'' },
+    { id:104, clientId:2, amount:1500, date:'2025-04-15', ref:'Abril/2025', method:'PIX', note:'' },
+  ];
+  saveDB();
+  renderDashboard();
+  updateNavBadge();
+  updateReportSelect();
+}
+</script>
+</body>
+</html>
